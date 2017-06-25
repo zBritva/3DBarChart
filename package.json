@@ -1,0 +1,26 @@
+{
+    "name": "visual",
+    "scripts": {
+        "postinstall": "pbiviz update 1.6.0",
+        "pbiviz": "pbiviz",
+        "start": "pbiviz start",
+        "lint": "tslint -r \"node_modules/tslint-microsoft-contrib\"  \"+(src|test)/**/*.ts\"",
+        "test": "pbiviz package --resources --no-minify --no-pbiviz"
+    },
+    "dependencies": {
+        "three": "0.85.2",
+        "three-js": "79.0.0",
+        "requirejs": "2.3.3"
+    },
+    "devDependencies": {
+        "powerbi-visuals-utils-typeutils": "1.1.0",
+        "powerbi-visuals-utils-colorutils": "1.0.0",
+        "powerbi-visuals-utils-dataviewutils": "1.2.0",
+        "powerbi-visuals-tools": "1.6.5",
+        "lodash": "4.16.2",
+        "d3": "3.5.5",
+        "@types/d3": "3.5.36",
+        "@types/lodash": "4.14.50",
+        "@types/three": "0.84.11"
+    }
+}

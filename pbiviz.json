@@ -1,0 +1,33 @@
+{
+  "visual": {
+    "name": "Bar3DChart",
+    "displayName": "Bar3DChart",
+    "guid": "Bar3DChart9C32AE0C09F9430A9858171F17380522",
+    "visualClassName": "Visual",
+    "version": "1.0.0",
+    "description": "",
+    "supportUrl": "",
+    "gitHubUrl": ""
+  },
+  "apiVersion": "1.6.0",
+  "author": {
+    "name": "Ilfat Galiev",
+    "email": ""
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "externalJS": [
+    "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-typeutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-colorutils/lib/index.js",
+    "node_modules/three/build/three.min.js",
+    "node_modules/d3/d3.min.js",
+    "node_modules/lodash/lodash.min.js",
+    "src/init.three.js"
+  ],
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "dependencies": "dependencies.json",
+  "stringResources": []
+}
