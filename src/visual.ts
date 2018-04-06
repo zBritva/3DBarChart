@@ -49,6 +49,12 @@ module powerbi.extensibility.visual {
         rotationZ: number;
     }
 
+    enum Axis {
+        X,
+        Y,
+        Z
+    }
+
     export class Visual implements IVisual {
         private target: HTMLElement;
         private settings: VisualSettings;
@@ -59,18 +65,18 @@ module powerbi.extensibility.visual {
         private parent3D: THREE.Object3D;
         private colorPalette: IColorPalette;
 
-        public static CategoryXIndex: number = 0;
-        public static CategoryYIndex: number = 1;
+        public static CategoryXIndex: number = 1;
+        public static CategoryYIndex: number = 0;
         public static DataViewIndex: number = 0;
         public static ValuesIndex: number = 0;
 
         private static CameraDefaultPosition: CameraPosition = <CameraPosition>{
-            z: 14,
-            x: -1.5,
-            y: 1,
+            z: 10,
+            x: 5,
+            y: 0,
             rotationX: -45,
             rotationY: 0,
-            rotationZ: -90
+            rotationZ: -45
         };
 
         constructor(options: VisualConstructorOptions) {
@@ -79,7 +85,10 @@ module powerbi.extensibility.visual {
 
             this.scene = new THREE.Scene();
             this.configureCamera();
-            this.renderer = new THREE.WebGLRenderer();
+            this.renderer = new THREE.WebGLRenderer({
+                alpha: true
+            });
+            // this.renderer.setClearColor( 0x000000, 0 ); // the default
             this.target.appendChild(this.renderer.domElement);
             this.colorPalette = options.host.colorPalette;
         }
@@ -91,7 +100,12 @@ module powerbi.extensibility.visual {
         }
 
         public update(options: VisualUpdateOptions) {
-            this.clearScene();
+            if (
+                options.type === VisualUpdateType.Data ||
+                options.type === VisualUpdateType.All
+            ) {
+                this.clearScene();
+            }
             if (!this.checkDataView(options.dataViews)) {
                 return;
             }
@@ -103,14 +117,26 @@ module powerbi.extensibility.visual {
 
             this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
 
-            let width = options.viewport.width;
-            let height = options.viewport.height;
-            this.renderer.setSize( width, height);
+            if (
+                options.type === VisualUpdateType.Resize ||
+                options.type === VisualUpdateType.All
+            ) {
+                let width = options.viewport.width;
+                let height = options.viewport.height;
+                this.renderer.setSize( width, height);
+            }
 
-            this.configureLights();
+            if (
+                options.type === VisualUpdateType.Data ||
+                options.type === VisualUpdateType.All
+            ) {
+                this.configureLights();
 
-            this.drawBars(model);
-            this.shiftCameraToCenterOfChart(model);
+                this.drawBars(model);
+                this.create2DLabels(options.dataViews[0].categorical.categories[0], Axis.X);
+                this.create2DLabels(options.dataViews[0].categorical.categories[1], Axis.Y);
+                this.shiftCameraToCenterOfChart(model);
+            }
 
             let this_ = this;
             function render() {
@@ -140,26 +166,35 @@ module powerbi.extensibility.visual {
 
         private drawBars(model: Bar3DChartDataModel): void {
             // let bar1 = this.createBar({ width: 1, height: 1, depth: 1, x: 1, y: 1, z: 0, color: "blue" });
-            let scale: d3.scale.Linear<number, number> = d3.scale.linear().domain([0, model.maxLocal]).range([0, 8]);
+            let scale: d3.scale.Linear<number, number> = d3.scale.linear().domain([0, model.maxLocal]).range([0, BAR_SIZE_HEIGHT]);
             model.bars.forEach((bar: Bar3D) => {
-                debugger;
-                let barMesh = this.createBar({ width: 1, height: 1, depth: scale(bar.value), x: bar.x, y: bar.y, z: 0, color: bar.color });
+                let barMesh = this.createBar({
+                    width: BAR_SIZE,
+                    height: BAR_SIZE,
+                    depth: scale(bar.value),
+                    x: bar.x,
+                    y: bar.y,
+                    z: 0,
+                    color: bar.color
+                });
                 this.scene.add(barMesh);
             });
         }
 
         private shiftCameraToCenterOfChart(model: Bar3DChartDataModel) {
-            let maxX = d3.max(model.bars, (data: Bar3D, index: number) => data.x);
-            let maxY = d3.max(model.bars, (data: Bar3D, index: number) => data.y);
-
-            this.camera.position.set(maxX / 2, maxY / 2, Visual.CameraDefaultPosition.z);
+            // let cameraX = (d3.max(model.bars, (data: Bar3D, index: number) => data.x) + BAR_SIZE / 2) / 2;
+            // let cameraY = (d3.max(model.bars, (data: Bar3D, index: number) => data.y) + BAR_SIZE / 2) / 2;
+            let cameraX = 0;
+            let cameraY = 0;
+            console.log("Camera position", cameraX, cameraY);
+            this.camera.position.set(cameraX || Visual.CameraDefaultPosition.x, cameraY || Visual.CameraDefaultPosition.y, Visual.CameraDefaultPosition.z);
         }
 
-        public static degRad(deg: number): number{
+        public static degRad(deg: number): number {
             return deg * Math.PI / 180;
         }
 
-        private configureCamera(): void{
+        private configureCamera(): void {
             this.camera = new THREE.PerspectiveCamera( 75, 800 / 600, 0.1, 1000 );
             this.camera.position.z = Visual.CameraDefaultPosition.z;
             this.camera.position.x = Visual.CameraDefaultPosition.x;
@@ -170,13 +205,13 @@ module powerbi.extensibility.visual {
         }
 
         private configureLights(): void {
-            let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
+            let hemiLight = new THREE.HemisphereLight( COLOR_WHITE, COLOR_WHITE, 0.6 );
             hemiLight.color.setHSL( 0.6, 0.75, 0.5 );
             hemiLight.groundColor.setHSL( 0.095, 0.5, 0.5 );
             hemiLight.position.set( 0, 500, 0 );
             this.scene.add( hemiLight );
 
-            let dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+            let dirLight = new THREE.DirectionalLight( COLOR_WHITE, 1 );
             dirLight.position.set( 5, -5, 8 );
             dirLight.position.multiplyScalar( 50);
             dirLight.name = "dirlight";
@@ -225,7 +260,7 @@ module powerbi.extensibility.visual {
         //     return colorHelper.getColorForMeasure(objects, "");
         // }
 
-        private checkDataView(dataViews: DataView[]): boolean{
+        private checkDataView(dataViews: DataView[]): boolean {
             if (!dataViews
             || !dataViews[Visual.DataViewIndex]
             || !dataViews[Visual.DataViewIndex].categorical
@@ -265,7 +300,7 @@ module powerbi.extensibility.visual {
             });
 
             let bars: Bar3D[] = [];
-            for (let valueIndex = 0; valueIndex < dataValue.values.length; valueIndex++){
+            for (let valueIndex = 0; valueIndex < dataValue.values.length; valueIndex++) {
                 let bar: Bar3D = <Bar3D>{
                     categoryX: categoryX.values[valueIndex],
                     categoryY: categoryY.values[valueIndex],
@@ -278,8 +313,7 @@ module powerbi.extensibility.visual {
                 bars.push(bar);
             }
 
-            // TODO sort bars by X and Y and indexes by value 
-
+            // TODO sort bars by X and Y and indexes by value
             return <Bar3DChartDataModel>{
                 bars: bars,
                 categoryIndexX: xCategoryIndex,
@@ -289,14 +323,46 @@ module powerbi.extensibility.visual {
             };
         }
 
-        private checkDataChanges(dataView: DataView): boolean {
-            return true;
+        private create2DLabels(category: DataViewCategoryColumn, axis: Axis): void {
+            let loader = new THREE.FontLoader();
+            let labelsShift = category.values.length * BAR_SIZE;
+            loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
+                category.values.forEach( (value: PrimitiveValue, index: number) => {
+                    debugger;
+                    let categoryLabel: THREE.TextGeometry = new THREE.TextGeometry( (value || "").toString(), {
+                        font: new THREE.Font((<any>font).data),
+                        height: 0.0001,
+                        size: BAR_SIZE / 2.1,
+                        bevelEnabled: false,
+                        bevelSize: 1,
+                        bevelThickness: 1
+                    });
+                    let material = new THREE.MeshLambertMaterial( {
+                        color: "black"
+                    });
+
+                    let textMesh = new THREE.Mesh(categoryLabel, material);
+                    if (axis === Axis.X) {
+                        textMesh.position.x = labelsShift;
+                        textMesh.position.y = index - (1 - BAR_SIZE) * 2;
+                        textMesh.position.z = 0;
+                    }
+                    if (axis === Axis.Y) {
+                        textMesh.position.y = labelsShift;
+                        textMesh.position.x = index + (1 - BAR_SIZE) * 2;
+                        textMesh.position.z = 0;
+
+                        textMesh.rotation.z = Visual.degRad(90);
+                    }
+                    this.scene.add(textMesh);
+                });
+            });
         }
 
-        /** 
-         * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the 
+        /**
+         * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
          * objects and properties you want to expose to the users in the property pane.
-         * 
+         *
          */
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
             return VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);
