@@ -24,7 +24,9 @@
     "node_modules/three/build/three.min.js",
     "node_modules/d3/d3.min.js",
     "node_modules/lodash/lodash.min.js",
-    "src/init.three.js"
+    "src/init.three.js",
+    "node_modules/three-orbit-controls/index.js",
+    "src/init.orbitcontrol.js"
   ],
   "style": "style/visual.less",
   "capabilities": "capabilities.json",

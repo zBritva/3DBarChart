@@ -16,6 +16,7 @@
     "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.d.ts",
     "node_modules/powerbi-visuals-utils-typeutils/lib/index.d.ts",
     "node_modules/powerbi-visuals-utils-colorutils/lib/index.d.ts",
+    "src/cameraControl.ts",
     "src/constants.ts",
     "src/interfaces.ts",
     "src/settings.ts",

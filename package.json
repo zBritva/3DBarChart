@@ -9,13 +9,13 @@
     },
     "dependencies": {
         "three": "0.85.2",
-        "three-js": "79.0.0",
+        "three-orbit-controls": "82.1.0",
         "requirejs": "2.3.3"
     },
     "devDependencies": {
         "powerbi-visuals-utils-typeutils": "1.1.0",
         "powerbi-visuals-utils-colorutils": "1.0.0",
-        "powerbi-visuals-utils-dataviewutils": "1.2.0",
+        "powerbi-visuals-utils-dataviewutils": "1.4.1",
         "powerbi-visuals-tools": "1.6.5",
         "lodash": "4.16.2",
         "d3": "3.5.5",

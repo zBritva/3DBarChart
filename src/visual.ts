@@ -59,6 +59,8 @@ module powerbi.extensibility.visual {
         private target: HTMLElement;
         private settings: VisualSettings;
 
+        private cameraControl: CameraControl;
+        private controls: THREE.OrbitControls;
         private scene: THREE.Scene;
         private camera: THREE.Camera;
         private renderer: THREE.Renderer;
@@ -69,14 +71,13 @@ module powerbi.extensibility.visual {
         public static CategoryYIndex: number = 0;
         public static DataViewIndex: number = 0;
         public static ValuesIndex: number = 0;
-
         private static CameraDefaultPosition: CameraPosition = <CameraPosition>{
             z: 10,
             x: 5,
             y: 0,
-            rotationX: -45,
+            rotationX: 0,
             rotationY: 0,
-            rotationZ: -45
+            rotationZ: 0
         };
 
         constructor(options: VisualConstructorOptions) {
@@ -91,6 +92,16 @@ module powerbi.extensibility.visual {
             // this.renderer.setClearColor( 0x000000, 0 ); // the default
             this.target.appendChild(this.renderer.domElement);
             this.colorPalette = options.host.colorPalette;
+
+            if (typeof THREE.OrbitControls !== "undefined") {
+                console.log('OrbitControls enabled');
+                this.controls = new THREE.OrbitControls( this.camera, this.target );
+                this.controls.update();
+            }
+            // this.cameraControl = new CameraControl(this.renderer, <THREE.PerspectiveCamera>this.camera, () => {
+            //     // you might want to rerender on camera update if you are not rerendering all the time
+            //     window.requestAnimationFrame(() => this.renderer.render(this.scene, this.camera));
+            // })
         }
 
         public clearScene(): void {
@@ -141,7 +152,9 @@ module powerbi.extensibility.visual {
             let this_ = this;
             function render() {
                 requestAnimationFrame( render );
+                // this_.controls.update();
                 this_.renderer.render( this_.scene, this_.camera );
+                this_.controls.update();
             }
             render();
         }
@@ -323,12 +336,25 @@ module powerbi.extensibility.visual {
             };
         }
 
+        private draw2DLine() {
+            //create a blue LineBasicMaterial
+            let material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+            let geometry = new THREE.Geometry();
+            geometry.vertices.push(new THREE.Vector3( -10, 0, 0) );
+            geometry.vertices.push(new THREE.Vector3( 0, 10, 0) );
+            geometry.vertices.push(new THREE.Vector3( 10, 0, 0) );
+            let line = new THREE.Line( geometry, material );
+            line.position.x = 0;
+            line.position.y = 0;
+            line.position.z = 0;
+            this.scene.add(line);
+        }
+
         private create2DLabels(category: DataViewCategoryColumn, axis: Axis): void {
             let loader = new THREE.FontLoader();
             let labelsShift = category.values.length * BAR_SIZE;
             loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
                 category.values.forEach( (value: PrimitiveValue, index: number) => {
-                    debugger;
                     let categoryLabel: THREE.TextGeometry = new THREE.TextGeometry( (value || "").toString(), {
                         font: new THREE.Font((<any>font).data),
                         height: 0.0001,
@@ -343,12 +369,12 @@ module powerbi.extensibility.visual {
 
                     let textMesh = new THREE.Mesh(categoryLabel, material);
                     if (axis === Axis.X) {
-                        textMesh.position.x = labelsShift;
+                        textMesh.position.x = BAR_SIZE + labelsShift;
                         textMesh.position.y = index - (1 - BAR_SIZE) * 2;
                         textMesh.position.z = 0;
                     }
                     if (axis === Axis.Y) {
-                        textMesh.position.y = labelsShift;
+                        textMesh.position.y = BAR_SIZE + labelsShift;
                         textMesh.position.x = index + (1 - BAR_SIZE) * 2;
                         textMesh.position.z = 0;
 
