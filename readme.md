@@ -8,6 +8,13 @@ The visual groups data by two categories and visualizes values by drawing severa
 
 Where visual puts the first category at X axis and the second category at Y axis.
 
-The value of group determines height of bar
+The value of group determines height of bar.
+
+Roadmap:
+
+* Implement labels as sprite of text
+* Draw axises grids
+* Save camera position
+* Added PBI tooltips
 
 License: MIT
