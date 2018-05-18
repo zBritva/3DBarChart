@@ -9,8 +9,7 @@
     },
     "dependencies": {
         "three": "0.85.2",
-        "three-orbit-controls": "82.1.0",
-        "requirejs": "2.3.3"
+        "three-orbit-controls": "82.1.0"
     },
     "devDependencies": {
         "powerbi-visuals-utils-typeutils": "1.1.0",
