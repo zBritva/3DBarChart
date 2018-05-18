@@ -8,14 +8,14 @@
         "test": "pbiviz package --resources --no-minify --no-pbiviz"
     },
     "dependencies": {
-        "three": "0.85.2",
+        "three": "0.92.0",
         "three-orbit-controls": "82.1.0"
     },
     "devDependencies": {
         "powerbi-visuals-utils-typeutils": "1.1.0",
         "powerbi-visuals-utils-colorutils": "1.0.0",
         "powerbi-visuals-utils-dataviewutils": "1.4.1",
-        "powerbi-visuals-tools": "1.6.5",
+        "powerbi-visuals-tools": "1.8.0",
         "lodash": "4.16.2",
         "d3": "3.5.5",
         "@types/d3": "3.5.36",
