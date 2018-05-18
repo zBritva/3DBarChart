@@ -1,7 +1,7 @@
 module powerbi.extensibility.visual {
     export interface Bar3D {
         x: number;
-        y: number;
+        z: number;
         value: number;
         color: string;
         categoryX: string;

@@ -96,6 +96,10 @@ module powerbi.extensibility.visual {
             if (typeof THREE.OrbitControls !== "undefined") {
                 console.log('OrbitControls enabled');
                 this.controls = new THREE.OrbitControls( this.camera, this.target );
+                this.controls.addEventListener("change", () => {
+                    console.log(`position ${this.camera.position.x} ${this.camera.position.y} ${this.camera.position.z}`);
+                    console.log(`rotation ${this.camera.rotation.x} ${this.camera.rotation.y} ${this.camera.rotation.z}`);
+                })
                 this.controls.update();
             }
             // this.cameraControl = new CameraControl(this.renderer, <THREE.PerspectiveCamera>this.camera, () => {
@@ -161,7 +165,7 @@ module powerbi.extensibility.visual {
 
         private createBar(params: BarMeshParams, includeToScene: boolean = false): THREE.Mesh {
             params.color = params.color || "red";
-            params.z = params.z || 0;
+            params.y = params.y || 0;
             let boxGeometry = new THREE.BoxGeometry(params.width, params.height, params.depth);
             boxGeometry.translate(0, 0 , params.depth / 2.0);
             let material = new THREE.MeshLambertMaterial( {
@@ -183,11 +187,11 @@ module powerbi.extensibility.visual {
             model.bars.forEach((bar: Bar3D) => {
                 let barMesh = this.createBar({
                     width: BAR_SIZE,
-                    height: BAR_SIZE,
-                    depth: scale(bar.value),
+                    height: scale(bar.value),
+                    depth: BAR_SIZE,
                     x: bar.x,
-                    y: bar.y,
-                    z: 0,
+                    z: bar.z,
+                    y: scale(bar.value) / 2,
                     color: bar.color
                 });
                 this.scene.add(barMesh);
@@ -319,7 +323,7 @@ module powerbi.extensibility.visual {
                     categoryY: categoryY.values[valueIndex],
                     value: dataValue.values[valueIndex],
                     x: xCategoryIndex[<string>categoryX.values[valueIndex]],
-                    y: yCategoryIndex[<string>categoryY.values[valueIndex]],
+                    z: yCategoryIndex[<string>categoryY.values[valueIndex]],
                     color: this.colorPalette.getColor(valueIndex.toString()).value
                 };
 
@@ -370,17 +374,26 @@ module powerbi.extensibility.visual {
                     let textMesh = new THREE.Mesh(categoryLabel, material);
                     if (axis === Axis.X) {
                         textMesh.position.x = BAR_SIZE + labelsShift;
-                        textMesh.position.y = index - (1 - BAR_SIZE) * 2;
-                        textMesh.position.z = 0;
+                        textMesh.position.z = index + (1 - BAR_SIZE) + (BAR_SIZE / 2);
+                        textMesh.position.y = 0;
+                        textMesh.rotation.x = Visual.degRad(90);
+                        textMesh.rotation.z = Visual.degRad(180);
+                        textMesh.rotation.y = Visual.degRad(-180);
+                        this.scene.add(textMesh);
                     }
                     if (axis === Axis.Y) {
-                        textMesh.position.y = BAR_SIZE + labelsShift;
+                        textMesh.geometry.computeBoundingBox();
+                        let size: THREE.Vector3 = textMesh.geometry.boundingBox.getSize();
+                        textMesh.position.z = BAR_SIZE + labelsShift + size.x;
                         textMesh.position.x = index + (1 - BAR_SIZE) * 2;
-                        textMesh.position.z = 0;
+                        textMesh.position.y = 0;
 
-                        textMesh.rotation.z = Visual.degRad(90);
+                        textMesh.rotation.z = Visual.degRad(-90);
+                        textMesh.rotation.x = Visual.degRad(90);
+                        textMesh.rotation.y = Visual.degRad(180);
+                        this.scene.add(textMesh);
                     }
-                    this.scene.add(textMesh);
+                    // this.scene.add(textMesh);
                 });
             });
         }
@@ -395,3 +408,4 @@ module powerbi.extensibility.visual {
         }
     }
 }
+
