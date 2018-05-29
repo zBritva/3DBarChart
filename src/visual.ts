@@ -80,6 +80,8 @@ module powerbi.extensibility.visual {
             rotationZ: 0
         };
 
+        private dataPassedFlag: boolean; 
+
         constructor(options: VisualConstructorOptions) {
             console.log('Visual constructor', options);
             this.target = options.element;
@@ -106,6 +108,7 @@ module powerbi.extensibility.visual {
             //     // you might want to rerender on camera update if you are not rerendering all the time
             //     window.requestAnimationFrame(() => this.renderer.render(this.scene, this.camera));
             // })
+            this.dataPassedFlag = false;
         }
 
         public clearScene(): void {
@@ -115,6 +118,7 @@ module powerbi.extensibility.visual {
         }
 
         public update(options: VisualUpdateOptions) {
+            debugger;
             if (
                 options.type === VisualUpdateType.Data ||
                 options.type === VisualUpdateType.All
@@ -122,6 +126,7 @@ module powerbi.extensibility.visual {
                 this.clearScene();
             }
             if (!this.checkDataView(options.dataViews)) {
+                this.dataPassedFlag = false;
                 return;
             }
 
@@ -134,12 +139,14 @@ module powerbi.extensibility.visual {
 
             if (
                 options.type === VisualUpdateType.Resize ||
-                options.type === VisualUpdateType.All
+                options.type === VisualUpdateType.All ||
+                !this.dataPassedFlag // correct data passed to the visual first time, the visual should configure the viewport
             ) {
                 let width = options.viewport.width;
                 let height = options.viewport.height;
                 this.renderer.setSize( width, height);
             }
+            this.dataPassedFlag = true;
 
             if (
                 options.type === VisualUpdateType.Data ||
@@ -148,8 +155,8 @@ module powerbi.extensibility.visual {
                 this.configureLights();
 
                 this.drawBars(model);
-                this.create2DLabels(options.dataViews[0].categorical.categories[0], Axis.X);
-                this.create2DLabels(options.dataViews[0].categorical.categories[1], Axis.Y);
+                this.create2DLabels(model, Axis.X);
+                this.create2DLabels(model, Axis.Y);
                 this.shiftCameraToCenterOfChart(model);
             }
 
@@ -354,11 +361,20 @@ module powerbi.extensibility.visual {
             this.scene.add(line);
         }
 
-        private create2DLabels(category: DataViewCategoryColumn, axis: Axis): void {
+        private create2DLabels(category: Bar3DChartDataModel, axis: Axis): void {
             let loader = new THREE.FontLoader();
-            let labelsShift = category.values.length * BAR_SIZE;
+            let values: CategoryIndex;
+            let labelsShift: number;
+            if (axis === Axis.X) {
+                values = category.categoryIndexX;
+                labelsShift = Object.keys(category.categoryIndexY).length * BAR_SIZE;
+            }
+            if (axis === Axis.Y) {
+                values = category.categoryIndexY;
+                labelsShift = Object.keys(category.categoryIndexX).length * BAR_SIZE;
+            }
             loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
-                category.values.forEach( (value: PrimitiveValue, index: number) => {
+                Object.keys(values).forEach( (value: PrimitiveValue, index: number) => {
                     let categoryLabel: THREE.TextGeometry = new THREE.TextGeometry( (value || "").toString(), {
                         font: new THREE.Font((<any>font).data),
                         height: 0.0001,
@@ -372,7 +388,7 @@ module powerbi.extensibility.visual {
                     });
 
                     let textMesh = new THREE.Mesh(categoryLabel, material);
-                    if (axis === Axis.X) {
+                    if (axis === Axis.Y) {
                         textMesh.position.x = BAR_SIZE + labelsShift;
                         textMesh.position.z = index + (1 - BAR_SIZE) + (BAR_SIZE / 2);
                         textMesh.position.y = 0;
@@ -381,7 +397,7 @@ module powerbi.extensibility.visual {
                         textMesh.rotation.y = Visual.degRad(-180);
                         this.scene.add(textMesh);
                     }
-                    if (axis === Axis.Y) {
+                    if (axis === Axis.X) {
                         textMesh.geometry.computeBoundingBox();
                         let size: THREE.Vector3 = textMesh.geometry.boundingBox.getSize();
                         textMesh.position.z = BAR_SIZE + labelsShift + size.x;
