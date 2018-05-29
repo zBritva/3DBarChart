@@ -80,11 +80,13 @@ module powerbi.extensibility.visual {
             rotationZ: 0
         };
 
-        private dataPassedFlag: boolean; 
+        private dataPassedFlag: boolean;
+        private host: IVisualHost;
 
         constructor(options: VisualConstructorOptions) {
             console.log('Visual constructor', options);
             this.target = options.element;
+            this.host = options.host;
 
             this.scene = new THREE.Scene();
             this.configureCamera();
@@ -95,12 +97,28 @@ module powerbi.extensibility.visual {
             this.target.appendChild(this.renderer.domElement);
             this.colorPalette = options.host.colorPalette;
 
+            let timeout: number = 0;
             if (typeof THREE.OrbitControls !== "undefined") {
                 console.log('OrbitControls enabled');
                 this.controls = new THREE.OrbitControls( this.camera, this.target );
                 this.controls.addEventListener("change", () => {
                     console.log(`position ${this.camera.position.x} ${this.camera.position.y} ${this.camera.position.z}`);
                     console.log(`rotation ${this.camera.rotation.x} ${this.camera.rotation.y} ${this.camera.rotation.z}`);
+
+                    this.settings.cameraPosition.positionX = this.camera.position.x;
+                    this.settings.cameraPosition.positionY = this.camera.position.y;
+                    this.settings.cameraPosition.positionZ = this.camera.position.z;
+
+                    this.settings.cameraPosition.rotationX = this.camera.rotation.x;
+                    this.settings.cameraPosition.rotationY = this.camera.rotation.y;
+                    this.settings.cameraPosition.rotationZ = this.camera.rotation.z;
+                    // for prevent ddosing host
+                    if (timeout === 0) {
+                        timeout = setTimeout(() => {
+                            this.persistCameraSettings(this.camera.position, this.camera.rotation);
+                            timeout = 0;
+                        }, 3000);
+                    }
                 })
                 this.controls.update();
             }
@@ -111,6 +129,28 @@ module powerbi.extensibility.visual {
             this.dataPassedFlag = false;
         }
 
+        private persistCameraSettings(position: THREE.Vector3, rotation: THREE.Euler) {
+            console.log('persist', position, rotation);
+            const instance: powerbi.VisualObjectInstance = {
+                objectName: "cameraPosition",
+                selector: undefined,
+                properties: {
+                    positionX: position.x,
+                    positionY: position.y,
+                    positionZ: position.z,
+                    rotationX: rotation.x,
+                    rotationY: rotation.y,
+                    rotationZ: rotation.z
+                }
+            };
+
+            this.host.persistProperties({
+                merge: [
+                    instance
+                ]
+            });
+        }
+
         public clearScene(): void {
             while (this.scene.children.length > 0) {
                 this.scene.remove(this.scene.children[0]);
@@ -118,7 +158,6 @@ module powerbi.extensibility.visual {
         }
 
         public update(options: VisualUpdateOptions) {
-            debugger;
             if (
                 options.type === VisualUpdateType.Data ||
                 options.type === VisualUpdateType.All
@@ -136,6 +175,7 @@ module powerbi.extensibility.visual {
             }
 
             this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
+            this.configureCamera();
 
             if (
                 options.type === VisualUpdateType.Resize ||
@@ -157,7 +197,6 @@ module powerbi.extensibility.visual {
                 this.drawBars(model);
                 this.create2DLabels(model, Axis.X);
                 this.create2DLabels(model, Axis.Y);
-                this.shiftCameraToCenterOfChart(model);
             }
 
             let this_ = this;
@@ -206,12 +245,7 @@ module powerbi.extensibility.visual {
         }
 
         private shiftCameraToCenterOfChart(model: Bar3DChartDataModel) {
-            // let cameraX = (d3.max(model.bars, (data: Bar3D, index: number) => data.x) + BAR_SIZE / 2) / 2;
-            // let cameraY = (d3.max(model.bars, (data: Bar3D, index: number) => data.y) + BAR_SIZE / 2) / 2;
-            let cameraX = 0;
-            let cameraY = 0;
-            console.log("Camera position", cameraX, cameraY);
-            this.camera.position.set(cameraX || Visual.CameraDefaultPosition.x, cameraY || Visual.CameraDefaultPosition.y, Visual.CameraDefaultPosition.z);
+            // TODO fix
         }
 
         public static degRad(deg: number): number {
@@ -219,13 +253,14 @@ module powerbi.extensibility.visual {
         }
 
         private configureCamera(): void {
-            this.camera = new THREE.PerspectiveCamera( 75, 800 / 600, 0.1, 1000 );
-            this.camera.position.z = Visual.CameraDefaultPosition.z;
-            this.camera.position.x = Visual.CameraDefaultPosition.x;
-            this.camera.position.y = Visual.CameraDefaultPosition.y;
-            this.scene.rotateX(Visual.degRad(Visual.CameraDefaultPosition.rotationX));
-            this.scene.rotateY(Visual.degRad(Visual.CameraDefaultPosition.rotationY));
-            this.scene.rotateZ(Visual.degRad(Visual.CameraDefaultPosition.rotationZ));
+            if (!this.camera) {
+                this.camera = new THREE.PerspectiveCamera( 75, 800 / 600, 0.1, 1000 );
+            }
+            let defaultCameraSettings = new CameraPosition();
+
+            let positions = this.settings && this.settings.cameraPosition || defaultCameraSettings;
+            this.camera.position.set(positions.positionX, positions.positionY, positions.positionZ);
+            this.camera.rotation.set(positions.rotationX, positions.rotationY, positions.rotationZ);
         }
 
         private configureLights(): void {
@@ -259,30 +294,11 @@ module powerbi.extensibility.visual {
         }
 
         private configureParentObject() {
-            // this.parent3D = new THREE.Object3D();
-            // this.scene.add(this.parent3D);
-            // this.parent3D.position.x = 1;
-            // this.parent3D.position.y = 1;
-            // this.parent3D.position.z = 0;
-            // this.parent3D.rotateZ(15);
         }
 
         private static parseSettings(dataView: DataView): VisualSettings {
             return VisualSettings.parse(dataView) as VisualSettings;
         }
-
-        // private getColor(
-        //     properties: DataViewObjectPropertyIdentifier,
-        //     defaultColor: string,
-        //     objects: DataViewObjects): string {
-
-        //     const colorHelper: ColorHelper = new ColorHelper(
-        //         this.colorPalette,
-        //         properties,
-        //         defaultColor);
-
-        //     return colorHelper.getColorForMeasure(objects, "");
-        // }
 
         private checkDataView(dataViews: DataView[]): boolean {
             if (!dataViews

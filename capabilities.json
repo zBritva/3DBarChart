@@ -61,6 +61,47 @@
                     }
                 }
             }
+        },
+        "cameraPosition": {
+            "displayName": "Camera position",
+            "properties": {
+                "positionX": {
+                    "displayName": "X position",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "positionY": {
+                    "displayName": "Y position",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "positionZ": {
+                    "displayName": "Z position",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "rotationX": {
+                    "displayName": "X rotation",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "rotationY": {
+                    "displayName": "Y rotation",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "rotationZ": {
+                    "displayName": "Z rotation",
+                    "type": {
+                        "numeric": true
+                    }
+                }
+            }
         }
     },
     "dataViewMappings": [
