@@ -36,7 +36,7 @@ module powerbi.extensibility.visual {
     export class CameraPosition {
       public positionX: number = 0;
       public positionY: number = 0;
-      public positionZ: number = 0;
+      public positionZ: number = 5;
       public rotationX: number = -0.7701915732356684;
       public rotationY: number = 0.6231796214239165;
       public rotationZ: number = 0.5151463594700321;
