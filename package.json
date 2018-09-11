@@ -16,7 +16,7 @@
         "powerbi-visuals-utils-colorutils": "1.0.0",
         "powerbi-visuals-utils-dataviewutils": "1.4.1",
         "powerbi-visuals-tools": "1.8.0",
-        "lodash": "4.16.2",
+        "lodash": "4.17.10",
         "d3": "3.5.5",
         "@types/d3": "3.5.36",
         "@types/lodash": "4.14.50",
