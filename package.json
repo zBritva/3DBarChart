@@ -4,6 +4,7 @@
         "postinstall": "pbiviz update 1.6.0 && npm run cert",
         "pbiviz": "pbiviz",
         "start": "pbiviz start",
+        "package": "pbiviz package --no-minify",
         "lint": "tslint -r \"node_modules/tslint-microsoft-contrib\"  \"+(src|test)/**/*.ts\"",
         "test": "pbiviz package --resources --no-minify --no-pbiviz",
         "cert": "pbiviz --create-cert"

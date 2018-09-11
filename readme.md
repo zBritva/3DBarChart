@@ -10,6 +10,13 @@ Where visual puts the first category at X axis and the second category at Y axis
 
 The value of group determines height of bar.
 
+To start dev server and debug the visual
+`npm run start`
+To create package call
+`npm run package`
+
+`pbiviz start` or `pbiviz package` will not work
+
 Roadmap:
 
 * Implement labels as sprite of text
