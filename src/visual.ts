@@ -134,9 +134,6 @@ module powerbi.extensibility.visual {
                 console.log('OrbitControls enabled');
                 this.controls = new THREE.OrbitControls( this.camera, this.target );
                 this.controls.addEventListener("change", () => {
-                    console.log(`position ${this.camera.position.x} ${this.camera.position.y} ${this.camera.position.z}`);
-                    console.log(`rotation ${this.camera.rotation.x} ${this.camera.rotation.y} ${this.camera.rotation.z}`);
-
                     this.settings.cameraPosition.positionX = this.camera.position.x;
                     this.settings.cameraPosition.positionY = this.camera.position.y;
                     this.settings.cameraPosition.positionZ = this.camera.position.z;
@@ -242,8 +239,8 @@ module powerbi.extensibility.visual {
         private createBar(params: BarMeshParams, includeToScene: boolean = false): THREE.Mesh {
             params.color = params.color || "red";
             params.y = params.y || 0;
+            params.height = params.height || 0.001;
             let boxGeometry = new THREE.BoxGeometry(params.width, params.height, params.depth);
-            boxGeometry.translate(0, 0 , params.depth / 2.0);
             let material = new THREE.MeshLambertMaterial( {
                 color: params.color
             });
@@ -259,7 +256,7 @@ module powerbi.extensibility.visual {
 
         private drawBars(model: Bar3DChartDataModel): void {
             // let bar1 = this.createBar({ width: 1, height: 1, depth: 1, x: 1, y: 1, z: 0, color: "blue" });
-            let scale: d3.scale.Linear<number, number> = d3.scale.linear().domain([0, model.maxLocal]).range([0, BAR_SIZE_HEIGHT]);
+            let scale: d3.scale.Linear<number, number> = d3.scale.linear().domain([model.minLocal, model.maxLocal]).range([0, BAR_SIZE_HEIGHT]);
             model.bars.forEach((bar: Bar3D) => {
                 let barMesh = this.createBar({
                     width: BAR_SIZE,
