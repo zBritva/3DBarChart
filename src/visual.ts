@@ -85,27 +85,27 @@ module powerbi.extensibility.visual {
 
         private test() {
             var scene = new THREE.Scene();
-			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
+            var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
 
-			var renderer = new THREE.WebGLRenderer();
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			this.target.appendChild(renderer.domElement);
+            var renderer = new THREE.WebGLRenderer();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            this.target.appendChild(renderer.domElement);
 
-			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-			var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-			var cube = new THREE.Mesh( geometry, material );
-			this.scene.add( cube );
+            var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+            var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+            var cube = new THREE.Mesh( geometry, material );
+            this.scene.add( cube );
 
-			camera.position.z = 5;
+            camera.position.z = 5;
 
-			var animate = function () {
-				requestAnimationFrame( animate );
+            var animate = function () {
+                requestAnimationFrame( animate );
 
-				cube.rotation.x += 0.01;
-				cube.rotation.y += 0.01;
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
 
-				renderer.render( scene, camera );
-			};
+                renderer.render( scene, camera );
+            };
 
             animate();
             return true;
@@ -134,6 +134,9 @@ module powerbi.extensibility.visual {
                 console.log('OrbitControls enabled');
                 this.controls = new THREE.OrbitControls( this.camera, this.target );
                 this.controls.addEventListener("change", () => {
+                    if (!this.settings) {
+                        return;
+                    }
                     this.settings.cameraPosition.positionX = this.camera.position.x;
                     this.settings.cameraPosition.positionY = this.camera.position.y;
                     this.settings.cameraPosition.positionZ = this.camera.position.z;
@@ -198,12 +201,12 @@ module powerbi.extensibility.visual {
                 return;
             }
 
+            this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
             let model = this.convertData(options.dataViews);
             if (model == null) {
                 return;
             }
 
-            this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
             this.configureCamera();
 
             if (
@@ -374,7 +377,7 @@ module powerbi.extensibility.visual {
                     value: dataValue.values[valueIndex],
                     x: xCategoryIndex[<string>categoryX.values[valueIndex]],
                     z: yCategoryIndex[<string>categoryY.values[valueIndex]],
-                    color: this.colorPalette.getColor(valueIndex.toString()).value
+                    color: this.settings.dataPoint.defaultColor || this.colorPalette.getColor(valueIndex.toString()).value
                 };
 
                 bars.push(bar);

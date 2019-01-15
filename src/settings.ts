@@ -46,13 +46,13 @@ module powerbi.extensibility.visual {
      // Default color
       public defaultColor: string = "";
      // Show all
-      public showAllDataPoints: boolean = true;
-     // Fill
-      public fill: string = "";
-     // Color saturation
-      public fillRule: string = "";
-     // Text Size
-      public fontSize: number = 12;
+    //   public showAllDataPoints: boolean = true;
+    //  // Fill
+    //   public fill: string = "";
+    //  // Color saturation
+    //   public fillRule: string = "";
+    //  // Text Size
+    //   public fontSize: number = 12;
      }
 
 }
