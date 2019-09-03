@@ -1,28 +1,33 @@
 {
     "name": "visual",
     "scripts": {
-        "postinstall": "pbiviz update 1.6.0 && npm run cert",
+        "postinstall": "npm run cert",
         "pbiviz": "pbiviz",
         "start": "pbiviz start",
         "package": "pbiviz package --no-minify",
         "lint": "tslint -r \"node_modules/tslint-microsoft-contrib\"  \"+(src|test)/**/*.ts\"",
         "test": "pbiviz package --resources --no-minify --no-pbiviz",
-        "cert": "pbiviz --create-cert"
+        "cert": "pbiviz --install-cert"
     },
     "dependencies": {
-        "three": "0.96.0",
-        "three-orbit-controls": "82.1.0"
+        "three": "0.108.0",
+        "orbit-controls-es6": "2.0.0",
+        "lodash-es": "4.17.15",
+        "core-js": "3.2.1",
+        "d3": "5.11.0",
+        "powerbi-visuals-utils-colorutils": "2.2.1",
+        "powerbi-visuals-utils-dataviewutils": "2.2.1",
+        "powerbi-visuals-utils-typeutils": "2.2.1"
     },
     "devDependencies": {
-        "@types/d3": "3.5.36",
-        "@types/lodash": "4.14.116",
-        "@types/three": "0.92.18",
-        "d3": "3.5.5",
-        "lodash": "4.17.10",
-        "powerbi-visuals-tools": "2.3.0",
-        "powerbi-visuals-utils-colorutils": "1.0.0",
-        "powerbi-visuals-utils-dataviewutils": "1.4.1",
-        "powerbi-visuals-utils-typeutils": "1.1.0",
-        "typescript": "3.0.3"
+        "@types/d3": "5.7.2",
+        "@types/lodash-es": "4.17.0",
+        "@types/three": "0.103.2",
+        "powerbi-visuals-api": "2.6.1",
+        "powerbi-visuals-tools": "3.1.5",
+        "typescript": "3.6.2",
+        "less": "3.10.3",
+        "less-loader": "5.0.0",
+        "style-loader": "0.23.1"
     }
 }

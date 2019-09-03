@@ -3,23 +3,14 @@
     "allowJs": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es6",
+    "module": "es6",
+    "target": "ES6",
     "sourceMap": true,
-    "out": "./.tmp/build/visual.js",
-    "sourceRoot": "../../src/",
+    "outDir": "./.tmp/build/",
+    "moduleResolution": "node",
     "declaration": true
   },
   "files": [
-    ".api/v1.6.0/PowerBI-visuals.d.ts",
-    "node_modules/@types/lodash/index.d.ts",
-    "node_modules/@types/d3/index.d.ts",
-    "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.d.ts",
-    "node_modules/powerbi-visuals-utils-typeutils/lib/index.d.ts",
-    "node_modules/powerbi-visuals-utils-colorutils/lib/index.d.ts",
-    "src/cameraControl.ts",
-    "src/constants.ts",
-    "src/interfaces.ts",
-    "src/settings.ts",
     "src/visual.ts"
   ]
 }
