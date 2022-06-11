@@ -39,8 +39,11 @@ import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInst
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+// import { Font, FontLoader } from "three/examples/jsm/loaders/FontLoader";
+// import { Geometry } from "three/examples/jsm/deprecated/Geometry";
 import * as THREE from "three";
-import OrbitControls from 'orbit-controls-es6';
 
 
 import { VisualSettings, CameraPosition as SettingsCameraPosition }from "./settings";
@@ -84,7 +87,7 @@ export class Visual implements IVisual {
     private settings: VisualSettings;
 
     private cameraControl: CameraControl;
-    private controls: OrbitControls;
+    private controls: OrbitControls | undefined;
     private scene: THREE.Scene;
     private camera: THREE.Camera;
     private renderer: THREE.Renderer;
@@ -137,52 +140,57 @@ export class Visual implements IVisual {
 
 
     constructor(options: VisualConstructorOptions) {
-        console.log('Visual constructor', options);
-        this.target = options.element;
-        this.host = options.host;
-        // if (this.test()) {
-        //     return;
-        // }
+        try{
+            console.log('Visual constructor', options);
+            this.target = options.element;
+            this.host = options.host;
+            // if (this.test()) {
+            //     return;
+            // }
 
-        this.scene = new THREE.Scene();
-        this.configureCamera();
-        this.renderer = new THREE.WebGLRenderer({
-            alpha: true
-        });
-        // this.renderer.setClearColor( 0x000000, 0 ); // the default
-        this.target.appendChild(this.renderer.domElement);
-        this.colorPalette = options.host.colorPalette;
+            this.scene = new THREE.Scene();
+            this.configureCamera();
+            this.renderer = new THREE.WebGLRenderer({
+                alpha: true
+            });
+            // this.renderer.setClearColor( 0x000000, 0 ); // the default
+            this.target.appendChild(this.renderer.domElement);
+            this.colorPalette = options.host.colorPalette;
 
-        let timeout: number = 0;
-        if (typeof OrbitControls !== "undefined") {
-            console.log('OrbitControls enabled');
-            this.controls = new OrbitControls( this.camera, this.target );
-            this.controls.addEventListener("change", () => {
-                if (!this.settings) {
-                    return;
-                }
-                this.settings.cameraPosition.positionX = this.camera.position.x;
-                this.settings.cameraPosition.positionY = this.camera.position.y;
-                this.settings.cameraPosition.positionZ = this.camera.position.z;
+            let timeout: number = 0;
+            if ((typeof OrbitControls) !== "undefined") {
+                console.log('OrbitControls enabled');
+                this.controls = new OrbitControls( this.camera, this.target );
+                this.controls.enabled = true;
+                this.controls.addEventListener("change", () => {
+                    if (!this.settings) {
+                        return;
+                    }
+                    this.settings.cameraPosition.positionX = this.camera.position.x;
+                    this.settings.cameraPosition.positionY = this.camera.position.y;
+                    this.settings.cameraPosition.positionZ = this.camera.position.z;
 
-                this.settings.cameraPosition.rotationX = this.camera.rotation.x;
-                this.settings.cameraPosition.rotationY = this.camera.rotation.y;
-                this.settings.cameraPosition.rotationZ = this.camera.rotation.z;
-                // for prevent ddosing host
-                if (timeout === 0) {
-                    timeout = (setTimeout as any)(() => {
-                        this.persistCameraSettings(this.camera.position, this.camera.rotation);
-                        timeout = 0;
-                    }, 3000) as number;
-                }
-            })
-            this.controls.update();
+                    this.settings.cameraPosition.rotationX = this.camera.rotation.x;
+                    this.settings.cameraPosition.rotationY = this.camera.rotation.y;
+                    this.settings.cameraPosition.rotationZ = this.camera.rotation.z;
+                    // for prevent ddosing host
+                    if (timeout === 0) {
+                        timeout = (setTimeout as any)(() => {
+                            this.persistCameraSettings(this.camera.position, this.camera.rotation);
+                            timeout = 0;
+                        }, 3000) as number;
+                    }
+                })
+                this.controls?.update();
+            }
+            // this.cameraControl = new CameraControl(this.renderer, <THREE.PerspectiveCamera>this.camera, () => {
+            //     // you might want to rerender on camera update if you are not rerendering all the time
+            //     window.requestAnimationFrame(() => this.renderer.render(this.scene, this.camera));
+            // })
+            this.dataPassedFlag = false;
+        } catch(e) {
+            console.error(e);
         }
-        // this.cameraControl = new CameraControl(this.renderer, <THREE.PerspectiveCamera>this.camera, () => {
-        //     // you might want to rerender on camera update if you are not rerendering all the time
-        //     window.requestAnimationFrame(() => this.renderer.render(this.scene, this.camera));
-        // })
-        this.dataPassedFlag = false;
     }
 
     private persistCameraSettings(position: THREE.Vector3, rotation: THREE.Euler) {
@@ -214,6 +222,7 @@ export class Visual implements IVisual {
     }
 
     public update(options: VisualUpdateOptions) {
+        console.log('VisualUpdateOptions', options);
         if (
             options.type === VisualUpdateType.Data ||
             options.type === VisualUpdateType.All
@@ -251,14 +260,14 @@ export class Visual implements IVisual {
             this.configureLights();
 
             this.drawBars(model);
-            this.create2DLabels(model, Axis.X);
-            this.create2DLabels(model, Axis.Y);
+            // this.create2DLabels(model, Axis.X);
+            // this.create2DLabels(model, Axis.Y);
         }
 
         let render = () => {
             requestAnimationFrame( render );
             this.renderer.render( this.scene, this.camera );
-            this.controls.update();
+            this.controls?.update();
         };
         render();
     }
@@ -417,72 +426,74 @@ export class Visual implements IVisual {
         };
     }
 
-    private draw2DLine() {
-        //create a blue LineBasicMaterial
-        let material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
-        let geometry = new THREE.Geometry();
-        geometry.vertices.push(new THREE.Vector3( -10, 0, 0) );
-        geometry.vertices.push(new THREE.Vector3( 0, 10, 0) );
-        geometry.vertices.push(new THREE.Vector3( 10, 0, 0) );
-        let line = new THREE.Line( geometry, material );
-        line.position.x = 0;
-        line.position.y = 0;
-        line.position.z = 0;
-        this.scene.add(line);
-    }
+    // private draw2DLine() {
+    //     //create a blue LineBasicMaterial
+    //     let material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+    //     let geometry = new THREE.BoxGeometry();
+    //     const vertices = [];
+    //     vertices.push(new THREE.Vector3( -10, 0, 0) );
+    //     vertices.push(new THREE.Vector3( 0, 10, 0) );
+    //     vertices.push(new THREE.Vector3( 10, 0, 0) );
+    //     geometry.setFromPoints( vertices );
+    //     let line = new THREE.Line( geometry, material );
+    //     line.position.x = 0;
+    //     line.position.y = 0;
+    //     line.position.z = 0;
+    //     this.scene.add(line);
+    // }
 
-    private create2DLabels(category: Bar3DChartDataModel, axis: Axis): void {
-        let loader = new THREE.FontLoader();
-        let values: CategoryIndex;
-        let labelsShift: number;
-        if (axis === Axis.X) {
-            values = category.categoryIndexX;
-            labelsShift = Object.keys(category.categoryIndexY).length * BAR_SIZE;
-        }
-        if (axis === Axis.Y) {
-            values = category.categoryIndexY;
-            labelsShift = Object.keys(category.categoryIndexX).length * BAR_SIZE;
-        }
-        loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
-            Object.keys(values).forEach( (value: PrimitiveValue, index: number) => {
-                let categoryLabel: THREE.TextGeometry = new THREE.TextGeometry( (value || "").toString(), {
-                    font: new THREE.Font((<any>font).data),
-                    height: 0.0001,
-                    size: BAR_SIZE / 2.1,
-                    bevelEnabled: false,
-                    bevelSize: 1,
-                    bevelThickness: 1
-                });
-                let material = new THREE.MeshLambertMaterial( {
-                    color: "black"
-                });
+    // private create2DLabels(category: Bar3DChartDataModel, axis: Axis): void {
+    //     let loader = new FontLoader();
+    //     let values: CategoryIndex;
+    //     let labelsShift: number;
+    //     if (axis === Axis.X) {
+    //         values = category.categoryIndexX;
+    //         labelsShift = Object.keys(category.categoryIndexY).length * BAR_SIZE;
+    //     }
+    //     if (axis === Axis.Y) {
+    //         values = category.categoryIndexY;
+    //         labelsShift = Object.keys(category.categoryIndexX).length * BAR_SIZE;
+    //     }
+    //     loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
+    //         Object.keys(values).forEach( (value: PrimitiveValue, index: number) => {
+    //             let categoryLabel: TextGeometry = new TextGeometry( (value || "").toString(), {
+    //                 font: new Font((<any>font).data),
+    //                 height: 0.0001,
+    //                 size: BAR_SIZE / 2.1,
+    //                 bevelEnabled: false,
+    //                 bevelSize: 1,
+    //                 bevelThickness: 1
+    //             });
+    //             let material = new THREE.MeshLambertMaterial( {
+    //                 color: "black"
+    //             });
 
-                let textMesh = new THREE.Mesh(categoryLabel, material);
-                if (axis === Axis.Y) {
-                    textMesh.position.x = BAR_SIZE + labelsShift;
-                    textMesh.position.z = index + (1 - BAR_SIZE) + (BAR_SIZE / 2);
-                    textMesh.position.y = 0;
-                    textMesh.rotation.x = Visual.degRad(90);
-                    textMesh.rotation.z = Visual.degRad(180);
-                    textMesh.rotation.y = Visual.degRad(-180);
-                    this.scene.add(textMesh);
-                }
-                if (axis === Axis.X) {
-                    textMesh.geometry.computeBoundingBox();
-                    let size: THREE.Vector3 = textMesh.geometry.boundingBox.max;
-                    textMesh.position.z = BAR_SIZE + labelsShift + size.x;
-                    textMesh.position.x = index + (1 - BAR_SIZE) * 2;
-                    textMesh.position.y = 0;
+    //             let textMesh = new THREE.Mesh(categoryLabel, material);
+    //             if (axis === Axis.Y) {
+    //                 textMesh.position.x = BAR_SIZE + labelsShift;
+    //                 textMesh.position.z = index + (1 - BAR_SIZE) + (BAR_SIZE / 2);
+    //                 textMesh.position.y = 0;
+    //                 textMesh.rotation.x = Visual.degRad(90);
+    //                 textMesh.rotation.z = Visual.degRad(180);
+    //                 textMesh.rotation.y = Visual.degRad(-180);
+    //                 this.scene.add(textMesh);
+    //             }
+    //             if (axis === Axis.X) {
+    //                 textMesh.geometry.computeBoundingBox();
+    //                 let size: THREE.Vector3 = textMesh.geometry.boundingBox.max;
+    //                 textMesh.position.z = BAR_SIZE + labelsShift + size.x;
+    //                 textMesh.position.x = index + (1 - BAR_SIZE) * 2;
+    //                 textMesh.position.y = 0;
 
-                    textMesh.rotation.z = Visual.degRad(-90);
-                    textMesh.rotation.x = Visual.degRad(90);
-                    textMesh.rotation.y = Visual.degRad(180);
-                    this.scene.add(textMesh);
-                }
-                // this.scene.add(textMesh);
-            });
-        });
-    }
+    //                 textMesh.rotation.z = Visual.degRad(-90);
+    //                 textMesh.rotation.x = Visual.degRad(90);
+    //                 textMesh.rotation.y = Visual.degRad(180);
+    //                 this.scene.add(textMesh);
+    //             }
+    //             // this.scene.add(textMesh);
+    //         });
+    //     });
+    // }
 
     /**
      * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
