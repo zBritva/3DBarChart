@@ -41,7 +41,7 @@ import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnume
 
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-// import { Font, FontLoader } from "three/examples/jsm/loaders/FontLoader";
+import { Font, FontLoader } from "three/examples/jsm/loaders/FontLoader";
 // import { Geometry } from "three/examples/jsm/deprecated/Geometry";
 import * as THREE from "three";
 
@@ -260,8 +260,8 @@ export class Visual implements IVisual {
             this.configureLights();
 
             this.drawBars(model);
-            // this.create2DLabels(model, Axis.X);
-            // this.create2DLabels(model, Axis.Y);
+            this.create2DLabels(model, Axis.X);
+            this.create2DLabels(model, Axis.Y);
         }
 
         let render = () => {
@@ -426,74 +426,60 @@ export class Visual implements IVisual {
         };
     }
 
-    // private draw2DLine() {
-    //     //create a blue LineBasicMaterial
-    //     let material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
-    //     let geometry = new THREE.BoxGeometry();
-    //     const vertices = [];
-    //     vertices.push(new THREE.Vector3( -10, 0, 0) );
-    //     vertices.push(new THREE.Vector3( 0, 10, 0) );
-    //     vertices.push(new THREE.Vector3( 10, 0, 0) );
-    //     geometry.setFromPoints( vertices );
-    //     let line = new THREE.Line( geometry, material );
-    //     line.position.x = 0;
-    //     line.position.y = 0;
-    //     line.position.z = 0;
-    //     this.scene.add(line);
-    // }
+    private create2DLabels(category: Bar3DChartDataModel, axis: Axis): void {
+        let loader = new FontLoader();
+        let values: CategoryIndex;
+        let labelsShift: number;
+        if (axis === Axis.X) {
+            values = category.categoryIndexX;
+            labelsShift = Object.keys(category.categoryIndexY).length * BAR_SIZE;
+        }
+        if (axis === Axis.Y) {
+            values = category.categoryIndexY;
+            labelsShift = Object.keys(category.categoryIndexX).length * BAR_SIZE;
+        }
+        loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
+            Object.keys(values).forEach( (value: PrimitiveValue, index: number) => {
+                let categoryLabel: TextGeometry = new TextGeometry( (value || "").toString(), {
+                    font: new Font((<any>font).data),
+                    height: 0.0001,
+                    size: BAR_SIZE / 2.1,
+                    bevelEnabled: false,
+                    bevelSize: 1,
+                    bevelThickness: 1
+                });
+                let material = new THREE.MeshLambertMaterial( {
+                    color: "black"
+                });
 
-    // private create2DLabels(category: Bar3DChartDataModel, axis: Axis): void {
-    //     let loader = new FontLoader();
-    //     let values: CategoryIndex;
-    //     let labelsShift: number;
-    //     if (axis === Axis.X) {
-    //         values = category.categoryIndexX;
-    //         labelsShift = Object.keys(category.categoryIndexY).length * BAR_SIZE;
-    //     }
-    //     if (axis === Axis.Y) {
-    //         values = category.categoryIndexY;
-    //         labelsShift = Object.keys(category.categoryIndexX).length * BAR_SIZE;
-    //     }
-    //     loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
-    //         Object.keys(values).forEach( (value: PrimitiveValue, index: number) => {
-    //             let categoryLabel: TextGeometry = new TextGeometry( (value || "").toString(), {
-    //                 font: new Font((<any>font).data),
-    //                 height: 0.0001,
-    //                 size: BAR_SIZE / 2.1,
-    //                 bevelEnabled: false,
-    //                 bevelSize: 1,
-    //                 bevelThickness: 1
-    //             });
-    //             let material = new THREE.MeshLambertMaterial( {
-    //                 color: "black"
-    //             });
+                let textMesh = new THREE.Mesh(categoryLabel, material);
+                if (axis === Axis.Y) {
+                    const z = category.bars.find(bar => String(bar.categoryY) == value).z;
+                    textMesh.position.x = BAR_SIZE + labelsShift;
+                    textMesh.position.z = z;
+                    textMesh.position.y = 0;
+                    textMesh.rotation.x = Visual.degRad(90);
+                    textMesh.rotation.z = Visual.degRad(180);
+                    textMesh.rotation.y = Visual.degRad(-180);
+                    this.scene.add(textMesh);
+                }
+                if (axis === Axis.X) {
+                    const x = category.bars.find(bar => String(bar.categoryX) == value).x;
+                    textMesh.geometry.computeBoundingBox();
+                    let size: THREE.Vector3 = textMesh.geometry.boundingBox.max;
+                    textMesh.position.z = BAR_SIZE + labelsShift + size.x;
+                    textMesh.position.x = x;
+                    textMesh.position.y = 0;
 
-    //             let textMesh = new THREE.Mesh(categoryLabel, material);
-    //             if (axis === Axis.Y) {
-    //                 textMesh.position.x = BAR_SIZE + labelsShift;
-    //                 textMesh.position.z = index + (1 - BAR_SIZE) + (BAR_SIZE / 2);
-    //                 textMesh.position.y = 0;
-    //                 textMesh.rotation.x = Visual.degRad(90);
-    //                 textMesh.rotation.z = Visual.degRad(180);
-    //                 textMesh.rotation.y = Visual.degRad(-180);
-    //                 this.scene.add(textMesh);
-    //             }
-    //             if (axis === Axis.X) {
-    //                 textMesh.geometry.computeBoundingBox();
-    //                 let size: THREE.Vector3 = textMesh.geometry.boundingBox.max;
-    //                 textMesh.position.z = BAR_SIZE + labelsShift + size.x;
-    //                 textMesh.position.x = index + (1 - BAR_SIZE) * 2;
-    //                 textMesh.position.y = 0;
-
-    //                 textMesh.rotation.z = Visual.degRad(-90);
-    //                 textMesh.rotation.x = Visual.degRad(90);
-    //                 textMesh.rotation.y = Visual.degRad(180);
-    //                 this.scene.add(textMesh);
-    //             }
-    //             // this.scene.add(textMesh);
-    //         });
-    //     });
-    // }
+                    textMesh.rotation.z = Visual.degRad(-90);
+                    textMesh.rotation.x = Visual.degRad(90);
+                    textMesh.rotation.y = Visual.degRad(180);
+                    this.scene.add(textMesh);
+                }
+                // this.scene.add(textMesh);
+            });
+        });
+    }
 
     /**
      * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
